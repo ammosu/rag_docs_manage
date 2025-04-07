@@ -1,0 +1,38 @@
+datasource db {
+  provider = "sqlite" // 可改為 "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  filename  String
+  filepath  String
+  filetype  String
+  size      Int
+  metadata  String
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  chunks    Chunk[]
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  content    String
+  embeddingId String
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String
+  createdAt DateTime @default(now())
+}

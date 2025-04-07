@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>RAG 文檔管理測試前端</title>
+<style>
+body { font-family: sans-serif; margin: 2em; }
+input[type="file"] { margin-bottom: 1em; }
+button { margin-top: 1em; }
+pre { background: #f0f0f0; padding: 1em; }
+</style>
+</head>
+<body>
+<h1>RAG 文檔管理測試前端</h1>
+<input type="file" id="fileInput" />
+<br />
+<button onclick="uploadFile()">上傳文件</button>
+<pre id="result"></pre>
+
+<h2>文件列表</h2>
+<ul id="docList"></ul>
+
+<h2>RAG 查詢</h2>
+<input type="text" id="queryInput" placeholder="輸入查詢內容" style="width:300px;" />
+<button onclick="search()">查詢</button>
+<pre id="searchResult"></pre>
+
+<script>
+async function uploadFile() {
+  const fileInput = document.getElementById('fileInput');
+  if (!fileInput.files.length) {
+    alert('請選擇檔案');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    loadDocuments();
+  } catch (err) {
+    document.getElementById('result').textContent = '上傳失敗: ' + err;
+  }
+}
+
+async function loadDocuments() {
+  const res = await fetch('/api/documents');
+  const docs = await res.json();
+  const list = document.getElementById('docList');
+  list.innerHTML = '';
+  docs.forEach(doc => {
+    const li = document.createElement('li');
+    li.textContent = `${doc.filename} (${doc.id}) `;
+    const btn = document.createElement('button');
+    btn.textContent = '刪除';
+    btn.onclick = async () => {
+      if (confirm('確定刪除?')) {
+        await fetch('/api/documents/' + doc.id, { method: 'DELETE' });
+        loadDocuments();
+      }
+    };
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+}
+
+loadDocuments();
+async function search() {
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) {
+    alert('請輸入查詢內容');
+    return;
+  }
+  try {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const data = await res.json();
+    document.getElementById('searchResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('searchResult').textContent = '查詢失敗: ' + err;
+  }
+}
+</script>
+</body>
+</html>

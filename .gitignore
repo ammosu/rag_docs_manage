@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# 環境變數
+.env
+
+# 上傳與加密檔案
+uploads/
+
+# SQLite 資料庫
+prisma/dev.db
+prisma/dev.db-journal
+
+# Prisma migration lock
+prisma/migrations/migration_lock.toml
+
+# 日誌檔
+*.log
+
+# macOS
+.DS_Store
