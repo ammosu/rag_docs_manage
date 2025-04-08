@@ -21,6 +21,29 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+/**
+ * @openapi
+ * /api/upload:
+ *   post:
+ *     summary: 上傳單一檔案
+ *     tags:
+ *       - Upload
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: 上傳成功
+ *       400:
+ *         description: 上傳失敗
+ */
 router.post('/', upload.single('file'), handleUpload);
 
 module.exports = router;
