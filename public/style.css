@@ -1,0 +1,116 @@
+body {
+  font-family: "Segoe UI", "Noto Sans TC", sans-serif;
+  background: #f5f7fa;
+  margin: 0;
+  padding: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  margin-bottom: 1em;
+}
+
+.container {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 2em;
+  max-width: 800px;
+  width: 100%;
+  margin-bottom: 2em;
+}
+
+section {
+  margin-bottom: 2em;
+}
+
+h2, h3 {
+  border-bottom: 2px solid #eee;
+  padding-bottom: 0.3em;
+  margin-bottom: 1em;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="file"],
+button,
+textarea {
+  font-size: 1em;
+  padding: 0.5em;
+  margin: 0.3em 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #357ab8;
+}
+
+pre {
+  background: #f0f0f0;
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+#loginResult {
+  max-width: 100%;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+#loginResult {
+  max-width: 100%;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.flex-row > div {
+  min-width: 0;
+}
+
+ul li {
+  background: #f9f9f9;
+  margin-bottom: 0.5em;
+  padding: 0.5em;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+ul li button {
+  width: auto;
+  margin: 0;
+  padding: 0.3em 0.6em;
+  font-size: 0.9em;
+}
+
+.flex-row {
+  display: flex;
+  gap: 1em;
+  flex-wrap: wrap;
+}
+
+.flex-row > div {
+  flex: 1 1 300px;
+}

@@ -6,7 +6,15 @@ const milvusClient = new MilvusClient('localhost:19530'); // 可改環境變數
 
 async function listDocuments(req, res) {
   try {
-    const docs = await prisma.document.findMany();
+    const workspaceId = req.workspaceId; // 假設 middleware 設定
+    const docs = await prisma.document.findMany({
+      where: {
+        OR: [
+          { workspaceId: workspaceId },
+          { isShared: true }
+        ]
+      }
+    });
     res.json(docs);
   } catch (err) {
     console.error(err);

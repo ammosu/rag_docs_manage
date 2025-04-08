@@ -18,7 +18,19 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    String
-  chunks    Chunk[]
+  workspaceId String?
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  isShared    Boolean    @default(false)
+  chunks      Chunk[]
+}
+
+model Workspace {
+  id        String     @id @default(uuid())
+  name      String
+  createdAt DateTime   @default(now())
+  documents Document[]
+  users     User[]
+  userWorkspaces UserWorkspace[]
 }
 
 model Chunk {
@@ -30,9 +42,21 @@ model Chunk {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
+  id        String     @id @default(uuid())
+  username  String     @unique
+  email     String     @unique
   password  String
   role      String
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
+  workspaces Workspace[]
+  userWorkspaces UserWorkspace[]
+}
+
+model UserWorkspace {
+  userId      String
+  workspaceId String
+  user        User      @relation(fields: [userId], references: [id])
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@id([userId, workspaceId])
 }

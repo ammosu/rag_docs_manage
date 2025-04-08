@@ -15,6 +15,8 @@ const documentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   userId: String,
+  workspaceId: String, // 所屬 workspace ID
+  isShared: { type: Boolean, default: false }, // 是否共用
   chunks: [chunkSchema],
 });
 

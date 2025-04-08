@@ -3,73 +3,258 @@
 <head>
 <meta charset="UTF-8" />
 <title>RAG 文檔管理測試前端</title>
-<style>
-body { font-family: sans-serif; margin: 2em; }
-input[type="file"] { margin-bottom: 1em; }
-button { margin-top: 1em; }
-pre { background: #f0f0f0; padding: 1em; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <h1>RAG 文檔管理測試前端</h1>
-<input type="file" id="fileInput" />
-<br />
-<button onclick="uploadFile()">上傳文件</button>
-<pre id="result"></pre>
 
-<h2>文件列表</h2>
-<ul id="docList"></ul>
+<div class="container">
 
-<h2>RAG 查詢</h2>
-<input type="text" id="queryInput" placeholder="輸入查詢內容" style="width:300px;" />
-<button onclick="search()">查詢</button>
-<pre id="searchResult"></pre>
+  <section class="flex-row">
+    <div>
+      <h2>使用者註冊</h2>
+      <input type="text" id="regUsername" placeholder="使用者名稱" />
+      <input type="email" id="regEmail" placeholder="Email" />
+      <input type="password" id="regPassword" placeholder="密碼" />
+      <button onclick="register()">註冊</button>
+      <pre id="registerResult"></pre>
+    </div>
+    <div>
+      <h2>使用者登入</h2>
+      <input type="text" id="loginUsername" placeholder="使用者名稱" />
+      <input type="password" id="loginPassword" placeholder="密碼" />
+      <button onclick="login()">登入</button>
+      <button onclick="logout()">登出</button>
+      <pre id="loginResult"></pre>
+      <h3>登入狀態</h3>
+      <pre id="authStatus">未登入</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Workspace 管理</h2>
+    <input type="text" id="workspaceName" placeholder="Workspace 名稱" />
+    <button onclick="createWorkspace()">建立 Workspace</button>
+    <button onclick="loadWorkspaces()">載入 Workspace 列表</button>
+    <pre id="workspaceResult"></pre>
+    <input type="text" id="deleteWorkspaceId" placeholder="Workspace ID" />
+    <button onclick="deleteWorkspace()">刪除 Workspace</button>
+    <pre id="deleteWorkspaceResult"></pre>
+    <button onclick="loadUsers()">載入用戶列表</button>
+    <pre id="userListResult"></pre>
+    <button onclick="loadWorkspacesWithUsers()">載入 Workspace 與成員</button>
+    <pre id="workspaceUsersResult"></pre>
+    <input type="text" id="userIdForWorkspaces" placeholder="使用者 ID" />
+    <button onclick="loadUserWorkspaces()">查詢使用者 Workspace</button>
+    <pre id="userWorkspacesResult"></pre>
+  </section>
+
+  <section>
+    <h2>User 加入 Workspace</h2>
+    <input type="text" id="userIdInput" placeholder="使用者 ID" />
+    <input type="text" id="workspaceIdInput" placeholder="Workspace ID" />
+    <button onclick="addUserToWorkspace()">加入 Workspace</button>
+    <pre id="userWorkspaceResult"></pre>
+  </section>
+
+  <section>
+    <h2>文件上傳</h2>
+    <input type="file" id="fileInput" />
+    <select id="workspaceSelect">
+      <option value="">選擇 Workspace</option>
+    </select>
+    <label><input type="checkbox" id="isSharedCheckbox" /> 設為共用</label>
+    <button onclick="uploadFile()">上傳文件</button>
+    <pre id="uploadResult"></pre>
+  </section>
+
+  <section>
+    <h2>文件列表</h2>
+    <button onclick="loadDocuments()">重新載入文件</button>
+    <ul id="docList"></ul>
+  </section>
+
+  <section>
+    <h2>RAG 查詢</h2>
+    <input type="text" id="queryInput" placeholder="輸入查詢內容" />
+    <button onclick="search()">查詢</button>
+    <pre id="searchResult"></pre>
+  </section>
+
+</div>
 
 <script>
+let token = null;
+
+function updateAuthStatus() {
+  document.getElementById('authStatus').textContent = token ? '已登入' : '未登入';
+}
+
+async function register() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value.trim();
+  try {
+    const res = await fetch('/api/users/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    document.getElementById('registerResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('registerResult').textContent = '註冊失敗: ' + err;
+  }
+}
+
+async function login() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  try {
+    const res = await fetch('/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.token) {
+      token = data.token;
+    }
+    document.getElementById('loginResult').textContent = JSON.stringify(data, null, 2);
+    updateAuthStatus();
+  } catch (err) {
+    document.getElementById('loginResult').textContent = '登入失敗: ' + err;
+  }
+}
+
+function logout() {
+  token = null;
+  updateAuthStatus();
+  document.getElementById('loginResult').textContent = '已登出';
+}
+
+async function createWorkspace() {
+  const name = document.getElementById('workspaceName').value.trim();
+  try {
+    const res = await fetch('/api/workspaces', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': 'Bearer ' + token })
+      },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    document.getElementById('workspaceResult').textContent = JSON.stringify(data, null, 2);
+    loadWorkspaces();
+  } catch (err) {
+    document.getElementById('workspaceResult').textContent = '建立失敗: ' + err;
+  }
+}
+
+async function loadWorkspaces() {
+  try {
+    const res = await fetch('/api/workspaces', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await res.json();
+    document.getElementById('workspaceResult').textContent = JSON.stringify(data, null, 2);
+
+    const select = document.getElementById('workspaceSelect');
+    select.innerHTML = '<option value="">選擇 Workspace</option>';
+    data.forEach(ws => {
+      const opt = document.createElement('option');
+      opt.value = ws.id;
+      opt.textContent = ws.name + ' (' + ws.id + ')';
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    document.getElementById('workspaceResult').textContent = '載入失敗: ' + err;
+  }
+}
+
+async function addUserToWorkspace() {
+  const userId = document.getElementById('userIdInput').value.trim();
+  const workspaceId = document.getElementById('workspaceIdInput').value.trim();
+  try {
+    const res = await fetch('/api/workspaces/' + workspaceId + '/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': 'Bearer ' + token })
+      },
+      body: JSON.stringify({ userId })
+    });
+    const data = await res.json();
+    document.getElementById('userWorkspaceResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('userWorkspaceResult').textContent = '加入失敗: ' + err;
+  }
+}
+
 async function uploadFile() {
   const fileInput = document.getElementById('fileInput');
+  const workspaceId = document.getElementById('workspaceSelect').value;
+  const isShared = document.getElementById('isSharedCheckbox').checked;
+
   if (!fileInput.files.length) {
     alert('請選擇檔案');
     return;
   }
+  if (!workspaceId) {
+    alert('請選擇 Workspace');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('file', fileInput.files[0]);
+  formData.append('workspaceId', workspaceId);
+  formData.append('isShared', isShared);
 
   try {
     const res = await fetch('/api/upload', {
       method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
       body: formData,
     });
     const data = await res.json();
-    document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    document.getElementById('uploadResult').textContent = JSON.stringify(data, null, 2);
     loadDocuments();
   } catch (err) {
-    document.getElementById('result').textContent = '上傳失敗: ' + err;
+    document.getElementById('uploadResult').textContent = '上傳失敗: ' + err;
   }
 }
 
 async function loadDocuments() {
-  const res = await fetch('/api/documents');
-  const docs = await res.json();
-  const list = document.getElementById('docList');
-  list.innerHTML = '';
-  docs.forEach(doc => {
-    const li = document.createElement('li');
-    li.textContent = `${doc.filename} (${doc.id}) `;
-    const btn = document.createElement('button');
-    btn.textContent = '刪除';
-    btn.onclick = async () => {
-      if (confirm('確定刪除?')) {
-        await fetch('/api/documents/' + doc.id, { method: 'DELETE' });
-        loadDocuments();
-      }
-    };
-    li.appendChild(btn);
-    list.appendChild(li);
-  });
+  try {
+    const res = await fetch('/api/documents', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const docs = await res.json();
+    const list = document.getElementById('docList');
+    list.innerHTML = '';
+    docs.forEach(doc => {
+      const li = document.createElement('li');
+      li.textContent = `${doc.filename} (${doc.id}) `;
+      const btn = document.createElement('button');
+      btn.textContent = '刪除';
+      btn.onclick = async () => {
+        if (confirm('確定刪除?')) {
+          await fetch('/api/documents/' + doc.id, {
+            method: 'DELETE',
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+          });
+          loadDocuments();
+        }
+      };
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+  } catch (err) {
+    console.error('載入文件失敗', err);
+  }
 }
 
-loadDocuments();
 async function search() {
   const query = document.getElementById('queryInput').value.trim();
   if (!query) {
@@ -88,6 +273,71 @@ async function search() {
     document.getElementById('searchResult').textContent = '查詢失敗: ' + err;
   }
 }
+
+updateAuthStatus();
+loadWorkspaces();
+loadDocuments();
+async function deleteWorkspace() {
+  const workspaceId = document.getElementById('deleteWorkspaceId').value.trim();
+  if (!workspaceId) {
+    alert('請輸入 Workspace ID');
+    return;
+  }
+  if (!confirm('確定要刪除這個 Workspace 嗎？')) return;
+  try {
+    const res = await fetch('/api/workspaces/' + workspaceId, {
+      method: 'DELETE',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await res.json();
+    document.getElementById('deleteWorkspaceResult').textContent = JSON.stringify(data, null, 2);
+    loadWorkspaces();
+  } catch (err) {
+    document.getElementById('deleteWorkspaceResult').textContent = '刪除失敗: ' + err;
+  }
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/users', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await res.json();
+    document.getElementById('userListResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('userListResult').textContent = '載入失敗: ' + err;
+  }
+}
+
+async function loadWorkspacesWithUsers() {
+  try {
+    const res = await fetch('/api/workspaces-with-users', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await res.json();
+    document.getElementById('workspaceUsersResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('workspaceUsersResult').textContent = '載入失敗: ' + err;
+  }
+}
+
+async function loadUserWorkspaces() {
+  const userId = document.getElementById('userIdForWorkspaces').value.trim();
+  if (!userId) {
+    alert('請輸入使用者 ID');
+    return;
+  }
+  try {
+    const res = await fetch('/api/users/' + userId + '/workspaces', {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    const data = await res.json();
+    document.getElementById('userWorkspacesResult').textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    document.getElementById('userWorkspacesResult').textContent = '查詢失敗: ' + err;
+  }
+}
+
 </script>
 </body>
 </html>
